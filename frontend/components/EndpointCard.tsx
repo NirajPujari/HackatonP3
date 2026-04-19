@@ -180,7 +180,7 @@ const EndpointCard: React.FC<EndpointCardProps> = ({
           </div>
 
           {/* Response Section */}
-          <ResponsePanel response={response} status={status} time={responseTime} />
+          <ResponsePanel path={path} response={response} status={status} time={responseTime} />
         </div>
       </div>
     </div>

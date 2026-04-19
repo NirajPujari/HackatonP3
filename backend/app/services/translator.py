@@ -21,7 +21,7 @@ def translate(word: str, lang: str, delay: int = 0.5):
     # Check Cache
     cached = get_cached_translation(normalized_word, lang)
     if cached:
-        return cached["translated_word"]
+        return {"translation": cached["translated_word"], "cache_hit": True}
 
     max_retries = 10
     
@@ -64,14 +64,14 @@ def translate(word: str, lang: str, delay: int = 0.5):
             
             if translated_word:
                 cache_translation(normalized_word, lang, translated_word)
-                return translated_word
+                return {"translation": translated_word, "cache_hit": False}
         
         except Exception as e:
             print(f"Attempt {attempt + 1} failed for {lang}: {e}")
             if attempt < max_retries - 1:
                 time.sleep(delay)
     
-    return "Translation unavailable" 
+    return {"translation": "Translation unavailable", "cache_hit": False} 
 
 def translate_multi(word: str, languages: list = None, delay: int = 0.5):
     """Head Agent: Orchestrates parallel translation tasks."""
@@ -90,7 +90,7 @@ def translate_multi(word: str, languages: list = None, delay: int = 0.5):
             try:
                 results[lang] = future.result()
             except Exception as exc:
-                results[lang] = f"Translation unavailable {exc}"
+                results[lang] = {"translation": f"Translation unavailable {exc}", "cache_hit": False}
 
     return {
         "word": word,

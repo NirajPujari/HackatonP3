@@ -4,14 +4,18 @@ import React, { useState } from "react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { atomDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { Copy, Check, Clock, Hash } from "lucide-react";
+import DeduplicateUI from "./DeduplicateUI";
+import CacheWarmupUI from "./CacheWarmupUI";
+import CacheStatsUI from "./CacheStatsUI";
 
 interface ResponsePanelProps {
+  path?: string;
   response: unknown;
   status: number | null;
   time: number | null;
 }
 
-const ResponsePanel: React.FC<ResponsePanelProps> = ({ response, status, time }) => {
+const ResponsePanel: React.FC<ResponsePanelProps> = ({ path, response, status, time }) => {
   const [copied, setCopied] = useState(false);
 
   if (!response && !status) return null;
@@ -28,8 +32,18 @@ const ResponsePanel: React.FC<ResponsePanelProps> = ({ response, status, time })
     return "text-amber-400";
   };
 
+  const renderSpecializedUI = () => {
+    if (!path || status === 0) return null;
+    if (path === "/api/deduplicate/") return <DeduplicateUI response={response} />;
+    if (path === "/api/cache/warmup") return <CacheWarmupUI response={response} />;
+    if (path === "/api/cache/stats") return <CacheStatsUI response={response} />;
+    return null;
+  };
+
   return (
     <div className="mt-4 space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
+      {renderSpecializedUI()}
+      
       <div className="flex items-center justify-between px-1">
         <div className="flex items-center gap-4 text-xs font-mono">
           {status && (

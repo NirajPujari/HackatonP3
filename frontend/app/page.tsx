@@ -1,6 +1,6 @@
 "use client";
 
-import { Server, Activity } from "lucide-react";
+import { Server } from "lucide-react";
 import EndpointCard from "@/components/EndpointCard";
 
 interface EndpointInfo {
@@ -43,6 +43,16 @@ const endpoints: EndpointInfo[] = [
     path: "/api/health",
     description: "Check the status and connectivity of the backend API system.",
   },
+  {
+    method: "POST",
+    path: "/api/cache/warmup",
+    description: "Warmup Translation Cache. Pre-translates all normalized inputs.",
+  },
+  {
+    method: "GET",
+    path: "/api/cache/stats",
+    description: "Get Cache Coverage Statistics.",
+  },
 ];
 
 export default function Home() {
@@ -50,22 +60,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#0f1117] text-white selection:bg-amber-500/30 selection:text-amber-200">
-      {/* Sticky Header */}
-      <header className="sticky top-0 z-50 w-full bg-[#0f1117]/80 backdrop-blur-xl border-b border-white/5 px-6 py-4 shadow-2xl">
-        <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-3 self-start md:self-auto">
-            <div className="w-10 h-10 rounded-xl bg-amber-500 flex items-center justify-center shadow-[0_0_20px_rgba(245,158,11,0.3)]">
-              <Activity className="w-6 h-6 text-black" />
-            </div>
-            <div>
-              <h1 className="text-xl font-black tracking-tight uppercase">
-                P3
-              </h1>
-            </div>
-          </div>
 
-        </div>
-      </header>
 
       {/* Main Content */}
       <main className="max-w-5xl mx-auto px-6 py-12 space-y-12">
