@@ -100,6 +100,11 @@ export default function AgentTrace() {
           <button 
             onClick={handleTrace}
             disabled={isRunning || !inputWord.trim()}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !isRunning && inputWord.trim()) {
+                handleTrace();
+              }
+            }}
             className="bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-wider hover:bg-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
             {isRunning ? (

@@ -8,6 +8,7 @@ A premium, interactive developer cockpit for testing and documenting the "Proble
 
 ### Purpose
 The API Explorer solves the fragmentation of manual API testing by providing:
+- **Educational Suite**: Deep technical insights, data flow breakdowns, and interactive agent visualizations.
 - **Interactive Documentation**: Test endpoints directly from the UI.
 - **Visual Feedback**: Real-time response rendering with syntax highlighting.
 - **Performance Monitoring**: Automatic measurement of backend response times.
@@ -33,12 +34,19 @@ The application uses a **Hybrid Rendering Strategy**:
 ```bash
 frontend/
 ├── app/                # Next.js App Router (Routing Layer)
+│   ├── how-it-works/       # Visualizes the data pipeline & caching
+│   ├── the-agent/          # Agent trace visualization & mechanics
+│   ├── the-problem/        # Details the core fragmentation problem
 │   ├── globals.css         # Global styles & Tailwind v4 config
 │   ├── layout.tsx          # Root layout & Metadata
 │   └── page.tsx            # Main Documentation Seat (Home)
 ├── components/         # Atomic & Molecular UI Components
+│   ├── AgentTrace.tsx      # Live visualization of agentic loops
+│   ├── CacheStatsUI.tsx    # Interactive caching analytics
+│   ├── CodeSpotlight.tsx   # Educational syntax highlighting
+│   ├── DecisionTree.tsx    # Flowchart of the deduplication logic
 │   ├── EndpointCard.tsx    # Interactive endpoint testing logic
-│   ├── MethodBadge.tsx     # Color-coded HTTP method pills
+│   ├── Navbar.tsx          # site navigation bar
 │   └── ResponsePanel.tsx   # JSON highlighting & Copy tools
 ├── public/             # Static assets
 ├── next.config.ts      # Next.js configuration
@@ -50,33 +58,28 @@ frontend/
 
 ## 🧩 3. Pages & Components Inventory
 
-### Entry Page: Home (`/`)
-- **Purpose**: The single-page dashboard where all system endpoints are listed.
-- **Key Features**: Sticky header, interactive list of cards, and system status indicator.
+### Entry Page: API Explorer (`/`)
+- **Purpose**: The main dashboard where all system endpoints are tested interactively.
+- **Key Features**: Live status indicators, global base URL modifier, Endpoint cards.
 
-### Core Components
+### Educational Suite Pages
+- **`/the-problem`**: Highlights the exact data fragmentation issue.
+- **`/how-it-works`**: Visualizes the internal pipeline using `DataFlowStepper` and `LayerPipeline`.
+- **`/the-agent`**: Deep dive into the deduplication agent, utilizing the interactive `AgentTrace` component to simulate LLM logic.
 
-#### 1. `EndpointCard.tsx`
+### Core Architecture Components
+
+#### 1. `AgentTrace.tsx` & `DecisionTree.tsx`
+- **Purpose**: Complex component visualizing the internal orchestrator logic for deduplication and caching.
+- **Functionality**: Dynamic state management and micro-animations via Framer Motion to demonstrate live AI thought-processes.
+
+#### 2. `EndpointCard.tsx`
 - **Purpose**: The main interactive block for an API endpoint.
-- **Props**:
-  - `method` (`"GET" | "POST"`): The HTTP verb.
-  - `path` (`string`): The relative endpoint path.
-  - `description` (`string`): Short summary of the action.
-  - `baseUrl` (`string`): The destination backend URL.
-  - `defaultBody` (`string`, optional): Initial JSON for POST requests.
-- **Functionality**: Manages `fetch` lifecycle, execution time, and visibility state.
+- **Functionality**: Executes requests via fetch, tracking network latency and response codes. Connects directly to `CacheWarmupUI` and `DeduplicateUI` for advanced interaction tracking.
 
-#### 2. `ResponsePanel.tsx`
-- **Purpose**: A specialized viewer for JSON data.
-- **Props**:
-  - `response` (`unknown`): The JSON object to render.
-  - `status` (`number | null`): HTTP status code.
-  - `time` (`number | null`): Latency in milliseconds.
-- **Functionality**: Implements auto-copy functionality and formatted scrollable code blocks.
-
-#### 3. `MethodBadge.tsx`
-- **Purpose**: Displays the HTTP method.
-- **Style**: Blue for GET, Green for POST.
+#### 3. `ResponsePanel.tsx`
+- **Purpose**: A specialized viewer for JSON data displaying live backend outputs.
+- **Functionality**: Implements auto-copy and React-friendly Code view.
 
 ---
 

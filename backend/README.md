@@ -29,6 +29,7 @@ The project follows a **Service-Oriented Architectural Pattern** within a monoli
 backend/
 ├── app/
 │   ├── api/            # FastAPI Routers (Controller layer)
+│   │   ├── cache.py        # Translation cache management
 │   │   ├── data.py         # Raw and Clean data retrieval
 │   │   ├── deduplicate.py  # Deduplication agent interface
 │   │   ├── normalize.py    # Data transformation triggers
@@ -36,6 +37,7 @@ backend/
 │   ├── db/             # Database connection & lifecycle
 │   ├── services/       # Logic layer (The "Brain")
 │   │   ├── agent.py        # Deduplication orchestration
+│   │   ├── cache_warmer.py # Automated LLM caching orchestration
 │   │   ├── db.py           # DB access helper functions
 │   │   ├── normalize.py    # Transformation rules
 │   │   └── translator.py   # Parallel translation engine
@@ -86,10 +88,33 @@ backend/
         ```json
         {
           "input_word": "Ivan",
-          "duplicates_found": [...],
-          "duplicate_languages": ["Russian", "Original"]
+          "matched_by_layer": 2,
+          "llm_calls_made": false,
+          "duplicates_found": [
+            {
+              "name": "Иван",
+              "lang": "Russian",
+              "confidence": 0.9,
+              "match_type": "translation_cache"
+            }
+          ],
+          "duplicate_languages": ["Russian"],
+          "summary": {
+            "total_found": 1,
+            "high_confidence": 1,
+            "low_confidence": 0
+          }
         }
         ```
+
+### Cache Management
+- **POST** `/api/cache/warmup`
+    - **Description**: Triggers the cache warmup process to translate all unique names into all missing target languages via the LLM API, persisting them in the database for zero-latency lookups.
+    - **Success Response**: `{"unique_names": 100, "target_languages": ["Hindi", "Russian"], "already_cached": 50, "newly_translated": 150...}`
+
+- **GET** `/api/cache/stats`
+    - **Description**: Returns detailed statistics on the translation cache, including the percentage of coverage per target language.
+    - **Success Response**: `{"total_cached_entries": 200, "coverage_by_language": {"Hindi": {"cached": 100, "total": 100, "coverage_pct": 100.0}}...}`
 
 ---
 

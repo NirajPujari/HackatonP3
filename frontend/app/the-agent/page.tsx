@@ -78,12 +78,12 @@ export default function TheAgent() {
         </section>
 
         {/* CODE SPOTLIGHT */}
-        <section className="space-y-12">
+        {/* <section className="space-y-12">
             <h2 className="text-3xl font-bold tracking-tight text-center">Core Logic Extraction</h2>
             <div className="max-w-5xl mx-auto">
                <CodeSpotlight />
             </div>
-        </section>
+        </section> */}
 
       </main>
     </div>
