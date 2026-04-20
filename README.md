@@ -9,17 +9,17 @@ An end-to-end intelligence platform designed to normalize, translate, and dedupl
 The system is built on a service-oriented architecture designed for high-concurrency translation and low-latency data retrieval.
 
 ```text
-  [ Client Tier ]       [ Application Tier ]       [ Intelligence Tier ]       [ Storage Tier ]
+  [ Client Tier ]       [ Application Tier ]       [ Intelligence Tier ]         [ Cache / Storage ]
   
   (Next.js App) <----> (FastAPI Router) <--------> (Deduplication Agent) <----> (MongoDB)
-                             |                            |
-                             |                    (Translation Service)
-                             |                            |
-                             +--------------------> (OpenRouter LLM API)
+   (Dashboard)               |                            |                        | -> data
+   (Edu Suite)               |                    (Translation Workers)            | -> cache
+                             |                            |                        |
+                             +--------------------> (OpenRouter LLM API) <---------+
 ```
 
 - **Protocol**: All tiers communicate via **REST/HTTP**.
-- **Execution**: The Agent operates using a synchronous-orchestration pattern with internal parallelized workers for translation.
+- **Execution**: The Agent operates using a synchronous-orchestration pattern with three distinct Layers (Fuzzy, Transliteration, LLM) and an internal Cache Warmer to skip heavy LLM translation loops.
 
 ---
 
@@ -27,29 +27,27 @@ The system is built on a service-oriented architecture designed for high-concurr
 
 The **Deduplication Agent** is the heart of this platform. It doesn't just look for string matches; it understands cultural and linguistic equivalents.
 
-### 2a. Trigger & Lifecycle
-The agent is triggered via a `POST /api/deduplicate/` request. It follows a multi-phase lifecycle designed for maximum accuracy:
+### 2a. The 3-Layered Inference Engine
+The agent is triggered via a `POST /api/deduplicate/` request and follows a multi-layered fallback sequence to balance accuracy, speed, and cost.
 
-1.  **Normalization Phase**: Sanitizes input strings (casing, punctuation, quotes).
-2.  **Discovery Phase**: Parallel translation of the input into all supported system languages.
-3.  **Consensus Evaluation**: Analyzes results for "high consensus" terms—if the same word appears frequently, it investigates deeper.
-4.  **Query Expansion**: The search set is expanded from one word to a cluster of linguistic variants.
-5.  **Deduction Phase**: Final database probing and language attribution.
+- **Layer 1: Deterministic Match**: Rapid fuzzy matching leveraging `Levenshtein` and regex bounds to find immediate phonetic bounds on the original script.
+- **Layer 2: Transliteration Mapping**: Utilizes `anyascii` and algorithmic mappings to catch non-LLM phonetic overlaps across scripts.
+- **Layer 3: Cross-Language Semantic Search (LLM)**: An orchestration loop that translates missing terms to find multi-lingual correlations.
 
-### 2b. The Intelligence Loop (5-Iteration Strategy)
-The agent utilizes a loop-based retry mechanism to handle LLM instability:
-- **Maximum Iterations**: 5.
-- **Fail-Safe**: It recursively tracks "Translation unavailable" responses and retries only those specific language nodes in subsequent iterations.
-- **Early Exit**: If a definitive duplicate cluster is found in the database, the agent breaks the loop immediately to save latency and API cost.
+### 2b. The Layer 3 Intelligence Loop (5-Iterations)
+If Layers 1 & 2 fail, the agent utilizes a loop-based LLM retry mechanism:
+- **Cache-First**: Queries the internal Database Cache for recent translations, completely bypassing the LLM if found.
+- **Fail-Safe**: It recursively tracks "Translation unavailable" LLM outputs and retries only those specific language nodes within its 5-iteration cap.
+- **Cache Warmer**: An async process (`POST /api/cache/warmup`) translates and pre-allocates names across all languages directly to speeds up real-time requests.
 
 ### 2c. Pipeline Step-by-Step
-| Step | Action | Input | Logic | Output |
+| Layer | Step | Action | Processing Logic | Exit Condition |
 | :--- | :--- | :--- | :--- | :--- |
-| **1** | **Normalize** | Raw String | Regex cleanup & Casing | `normalized_input` |
-| **2** | **Translate** | `normalized_input` | Threaded LLM calls (Workers) | `translations_dict` |
-| **3** | **Heuristic** | `translations_dict` | Consensus Frequency Analysis | `retry_flag` (optional) |
-| **4** | **Probe** | `[input + unique_trans]` | MongoDB Case-Insensitive $or query | `duplicates_found` |
-| **5** | **Attribute** | `duplicates_found` | Map DB hits to source languages | `final_result` |
+| **L1** | **Fuzzy** | Direct Comparison | Jaro-Winkler/Levenshtein matching | `match_found == true` |
+| **L2** | **ASCII** | Transliteration | `anyascii` standard mapping | `ascii_match_found == true` |
+| **L3** | **Translate** | Distributed LLM | Cache hits -> Threaded LLM queries | `iterations == 5` |
+| **L3** | **Probe** | Target Mapping | MongoDB Case-Insensitive search | Continues to Attribute |
+| **L3** | **Attribute** | Confidence Score | Map DB hits to source languages | End of Execution |
 
 ### 2d. Data Transformations: A Concrete Example
 **Input**: `"Ivan"` (English)
@@ -70,12 +68,14 @@ The agent utilizes a loop-based retry mechanism to handle LLM instability:
 
 ## 🔄 3. End-to-End User Flow
 
-1.  **UI Entry**: User enters "Apple" in the **API Explorer Dashboard**.
-2.  **Request**: Dashboard sends `POST /api/deduplicate/ {word: "Apple"}` to `:8000`.
-3.  **Agent Start**: `run_deduplication_agent()` initializes a 5-step lifecycle.
-4.  **Translation**: 5 parallel workers call OpenRouter to get translations for Hindi, Russian, etc.
-5.  **DB Search**: The agent searches MongoDB using the full cluster of translations.
-6.  **Response**: Frontend renders a syntax-highlighted JSON showing the exact duplicates found in the system.
+1. **Dashboard Interaction**: A developer accesses the frontend API Explorer and Educational Suite (`/the-agent`).
+2. **Input Submision**: User requests Deduplication for "Ivan".
+3. **Layer Invocation**: Backend attempts L1/L2 and then falls back to L3 (`app/services/agent.py`).
+4. **Cache & LLM Checks**: 
+   - Known translations are loaded instantly from MongoDB.
+   - Unknowns are dispatched via threading to the LLM (OpenRouter).
+5. **Score Allocation**: Matching logic runs yielding high/low confidence ratings per match type.
+6. **Frontend Synthesis**: The Next.js client renders dynamic JSON, visual trace trees, and deduplication latency markers on the Dashboard.
 
 ---
 
